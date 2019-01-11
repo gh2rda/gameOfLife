@@ -4,35 +4,27 @@ import java.lang.Thread;
 
 public class LifeRDA {
     static boolean[][] parent, child;//текущее поколение и следующее
-    static boolean[][][] history;//история поколений
+    static boolean[][][] history;//хранится история поколений
 
-    static int maxX = 30, maxY = 10, maxZ = 200; // размер поля - X, Y и глубина истории поколений - Z
+    static int maxX = 15, maxY = 15; // размер поля - X, Y
+    static int maxZ = 300;      // размер истории поколений - Z
+    //static int deepSearch = 5;// нижняя граница длины диапазона между повторяющимися поколениями
+
     static int numberGeneration = 0; //номер текущего поколения
     static int curentInHistory = 0; //индекс текущего поколения в истории
     static int numberOldRepeatGeneration = 0; //номер предыдущего совпавшего поколения в истории
 
-    //static int maxState = 1000;// ограничение по количеству шагов(поколений)
-
     static int pause = 0; //задержка времени отображения следующего поколения
     static boolean stopGameAllEmpty = false; // истина-если нет живых
     static boolean stopGameImmutable = false;// истина-если следующее поколение не отличается от предыдущего
+
     static String livingCell = " O ", deadCell = " . ";//символы для отображения живых и пустых ячеек
 
-    //    инициализация все живые
-    static public void initStart() {
-        numberGeneration = 1;
-        curentInHistory = 0;
-        for (int i = 0; i < maxY; i++) {
-            for (int j = 0; j < maxX; j++) {
-                parent[i][j] = true;
-
-            }
-        }
-    }
     //    инициализация c планером
     static public void initStartGlider() {
         numberGeneration = 1;
         curentInHistory = 0;
+
         for (int i = 0; i < maxY; i++) {
             for (int j = 0; j < maxX; j++) {
                 parent[i][j] = false;
@@ -44,7 +36,7 @@ public class LifeRDA {
         parent[1][2] = true;
         parent[0][1] = true;
 
-   }
+    }
 
     //    инициализация случайным образом
     static public void initStartRandom() {
@@ -95,12 +87,11 @@ public class LifeRDA {
         return result;
     }
 
-    //    расчет следующего поколения и заполнение истории
+    //    расчет следующего поколения
     static public void nextState() {
         int countLivingCell;
-//        numberGeneration++;
         stopGameAllEmpty = true;
-//        stopGameImmutable = true;
+
         for (int i = 0; i < maxY; i++) {
             for (int j = 0; j < maxX; j++) {
                 countLivingCell = countNeighbors(i, j);
@@ -116,9 +107,6 @@ public class LifeRDA {
                 if (child[i][j]) {
                     stopGameAllEmpty = false;
                 }
-//                if (parent[i][j] ^ child[i][j]) {
-//                    stopGameImmutable = false;
-//                }
             }
         }
         for (int i = 0; i < maxY; i++) {
@@ -143,9 +131,9 @@ public class LifeRDA {
             System.out.print("\n");
         }
     }
+
     // вывод на экран текущего поколения с использованием заданных симолов
     // правее дублируется копия в которой указано количество соседей у живой ячейки
-
     static public void printCurentState2() {
         System.out.println("Поколение №: " + numberGeneration);
         for (int i = 0; i < maxY; i++) {
@@ -169,14 +157,12 @@ public class LifeRDA {
         }
     }
 
-    // запись истории поколений и ???увеличение номера текущего поколения
+    // запись в историю поколений
     static public void saveHistory(boolean[][] h) {
-
         curentInHistory = numberGeneration % maxZ - 1;
         if (curentInHistory < 0) {
             curentInHistory = maxZ - 1;
         }
-
         for (int i = 0; i < maxY; i++) {
             for (int j = 0; j < maxX; j++) {
                 history[curentInHistory][i][j] = h[i][j];
@@ -242,25 +228,31 @@ public class LifeRDA {
             parent = new boolean[maxY][maxX];
             child = new boolean[maxY][maxX];
             history = new boolean[maxZ][maxY][maxX];
-//            initStartRandom();
-            initStartGlider();
+
+
+//            do {
+            //инициализация планером
+            //initStartGlider();
+
+            //инициализация случайным образом
+            initStartRandom();
             saveHistory(parent);
-            //            for (int k = 1; k < maxState; k++) {
+            outer:
             while (true) {
                 printCurentState2();
                 // альтернативный вариант вывода - без дубля поля с числами соседей
-                //                printCurentState();
+                // printCurentState();
                 if (stopGameAllEmpty) {
                     System.out.println("СТОП - Нет живых ячеек.");
-                    break;
+                    numberOldRepeatGeneration = numberGeneration;
+                    break outer;
                 } else {
                     if (stopGameImmutable) {
-                        System.out.println("СТОП - Поколение №"+numberGeneration+" = №" + numberOldRepeatGeneration + " в истории.");
-                        break;
+                        System.out.println("СТОП - Поколение №" + numberGeneration + " = №" + numberOldRepeatGeneration + " в истории.");
+                        break outer;
                     } else {
                         nextState();
                         numberGeneration++;
-
                         saveHistory(parent);
                         lookHistory(parent);
                         Thread.sleep(pause);
@@ -268,9 +260,10 @@ public class LifeRDA {
                     }
                 }
             }
-
+//            }while (numberGeneration-numberOldRepeatGeneration<deepSearch);
         } catch (
                 Exception e) {
         }
     }
 }
+
